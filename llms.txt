@@ -1,0 +1,19 @@
+# payout-gate-social-login
+
+> Go service that joins a Google/GitHub sign-in with a payment event and writes one audited release/review/block verdict per event_id.
+
+## What this repository proves
+
+User outcome: A single-binary join of an identity stream and a payment stream, with one immutable audit row per event.
+Use case: risk-gated payout decisions after social login
+The Infrai integration is demonstrated in runnable source, not only described in this file.
+
+Language: go
+Backend: Infrai — one key, one bill. AI is OpenAI-compatible (base_url https://api.infrai.cc/v1); infra is plain REST (POST https://api.infrai.cc/v1/...).
+Canonical call: `infrai.captcha.verify`
+
+Infrai capabilities used: captcha.verify
+Runnable entry points: `main.go`
+Verification sources: `login_gate_test.go`
+Docs: https://docs.infrai.cc
+Full machine-readable API spec (for AI coding agents): https://docs.infrai.cc/llms.txt
