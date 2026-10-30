@@ -5,9 +5,16 @@ go test ./...          # the rule table
 INFRAI_API_KEY=... ./scripts/decide_sample.sh
 ```
 
-Two streams in a fintech backend. Identities: user finishes Google or GitHub OAuth, gets a session. Money: payouts, refunds, card adds, sent at least once (retries). Join them: that's the job. This service takes one row from each, asks`infrai.captcha.verify`to score sign-in trust, writes one verdict keyed by`event_id`.
+Two streams meet in a fintech backend. One is identities: someone came back from
+Google or GitHub and now holds a session. The other is money: payouts, refunds,
+card additions, arriving at least once because the upstream producer retries.
+Joining them is the whole job. This service takes one row from each, asks
+`infrai.captcha.verify` how much to trust the sign-in, and writes a single
+verdict keyed by `event_id`.
 
-Infrai gives one key and one endpoint for that check. Plain REST call from Go, no SDK,`Authorization: Bearer $INFRAI_API_KEY`. Sign-up includes $2 pay-per-use credit, enough to replay all this.
+Infrai is one key and one endpoint for that check — a plain REST call from Go,
+no SDK to install, `Authorization: Bearer $INFRAI_API_KEY`. Sign-up carries $2
+of pay-per-use credit, enough to replay everything here.
 
 ## The rule
 
@@ -21,7 +28,7 @@ Infrai gives one key and one endpoint for that check. Plain REST call from Go, n
 | payout $5,000 and up | 0.90 |
 
 `decide` in `payment_events.go` then returns `release`, `review` or `block`.
-No I/O happens, so the table in `login_gate_test.go` walks every branch: a
+It takes no I/O, so the table in `login_gate_test.go` walks every branch: a
 $42 payout at score 0.62 releases; the same score on a `card_add` blocks; a
 $1,000 payout from a device we have not seen before goes to `review` even at
 0.95; a sign-in more than 15 minutes old goes to review; a sign-in whose
@@ -30,8 +37,8 @@ $1,000 payout from a device we have not seen before goes to `review` even at
 ## The call
 
 `captcha_client.go` sends `score_threshold` equal to the floor the event
-deserves, along with `token`, `vendor`, `ip` and `action`. Decode the
-`{ok, data, error, metadata}` envelope first and read `ok` before checking
+deserves, along with `token`, `vendor`, `ip` and `action`. It decodes the
+`{ok, data, error, metadata}` envelope first and reads `ok` before it looks at
 the status code, because a low-trust sign-in is a described result, not a
 transport fault. The handler turns that result into a `block` row and a 403 for
 its own caller. Transport trouble and 429 are separate: those retry with
